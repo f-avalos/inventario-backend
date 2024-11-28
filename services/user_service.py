@@ -5,7 +5,7 @@ from datetime import datetime
 def create_user(user):
 
     rol_id: int = 1 # 1: Admin
-    estado: int = 1 # 1: Activo, 0: Inactivo
+    estado: int = 1 # 1: Activo, 0: Inactivo #Prueba
 
     # Abrir conexión
     conn = get_connection()
