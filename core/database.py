@@ -4,27 +4,32 @@ from dotenv import load_dotenv
 import os
 
 # BBDD
-import psycopg2
+import mysql.connector
+from mysql.connector import pooling
+
 
 load_dotenv()
 class Settings(BaseSettings):
-    POSTGRES_NAME: str = os.getenv("DATABASE_NAME")
-    POSTGRES_USER: str = os.getenv("DATABASE_USER")
-    POSTGRES_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
-    POSTGRES_HOST: str = os.getenv("DATABASE_HOST")
-    POSTGRES_PORT: str = os.getenv("DATABASE_PORT")
-
+    MYSQL_NAME: str = os.getenv("DATABASE_NAME")
+    MYSQL_USER: str = os.getenv("DATABASE_USER")
+    MYSQL_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
+    MYSQL_HOST: str = os.getenv("DATABASE_HOST")
+    MYSQL_PORT: str = os.getenv("DATABASE_PORT")
 
 def get_connection():
     try:
         settings = Settings()
-        conn = psycopg2.connect(
-            dbname=settings.POSTGRES_NAME,
-            user=settings.POSTGRES_USER,
-            password=settings.POSTGRES_PASSWORD,
-            host=settings.POSTGRES_HOST,
-            port=settings.POSTGRES_PORT
-        )
+        pool = pooling.MySQLConnectionPool(
+                pool_name="pool",
+                pool_size=10,
+                user=settings.MYSQL_USER,
+                password=settings.MYSQL_PASSWORD,
+                host=settings.MYSQL_HOST,
+                database=settings.MYSQL_NAME,
+                port=settings.MYSQL_PORT
+            )
+        conn = pool.get_connection()
+
         return conn
     except Exception as e:
 

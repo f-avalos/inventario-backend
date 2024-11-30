@@ -20,7 +20,6 @@ class Usuario(BaseModel):
     apellido: str
     direccion: Optional[str]
     username: str
-    email: str
     contrasena: str
 
 
@@ -46,14 +45,13 @@ class ErrorResponse(BaseModel):
 def validaciones(user: Usuario):
 
     errors = []
-    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 
     #Validaciones de datos: verificar si name/email/password son nulos o vacíos, si email es un email válido, etc.
     if(user.nombre is None or user.nombre == ''):
         errors.append({'nombre': 'El nombre es obligatorio'})
 
-    if(user.email is None or user.email == ''):
-        errors.append({'email': 'El email es obligatorio'})
+    if(user.apellido is None or user.apellido == ''):
+        errors.append({'apellido': 'El apellido es obligatorio'})
 
     if(user.contrasena is None or user.contrasena == ''):
         errors.append({'contrasena': 'La contraseña es obligatoria'})
@@ -62,11 +60,6 @@ def validaciones(user: Usuario):
 
     if(user.username is None or user.username == ''):
         errors.append({'username': 'El campo username es obligatorio'})
-
-    if(user.email is None or user.email == ''):
-        errors.append({'email': 'El campo email es obligatorio'})
-    if not re.match(email_regex, user.email):
-        errors.append({'email': 'El email no es válido'})
 
     # Fecha creación y actualización se asignan automáticamente en la base de datos
 
@@ -106,8 +99,6 @@ def validaciones(user: Usuario):
                         "errors": [
                             {"nombre": "El nombre es obligatorio"},
                             {"apellido": "El apellido es obligatorio"},
-                            {"email": "El email es obligatorio"},
-                            {"email": "El email no es válido"},
                             {"contrasena": "La contraseña es obligatoria"},
                             {"contrasena": "La contraseña debe tener al menos 8 caracteres"},
                             {"username": "El campo username es obligatorio"},
@@ -152,25 +143,34 @@ def validaciones(user: Usuario):
                     }
                 }
             }
+        },
+        500: {
+            "description": "Error de servidor",
+            "content": {
+                "application/json": {
+                    "schema": ErrorResponse.model_json_schema(),
+                    "example": {
+                        "code": 500,
+                        "message": "Error interno del servidor",
+                        "errors": "Error al conectar con el servidor o la base de datos"
+                    }
+                }
+            }
         }
     },
 )
 def register_user(user: Usuario): # Datos que recibe la API desde frontend
-    print(user)
     errors = validaciones(user)
     if(len(errors) > 0):
         raise HTTPException(status_code=400, detail={'code': 400, 'message': 'Error de validaciones', 'errors': errors})
-    
-    #password_hash = hashs.hash_password(user.contrasena)
 
-    #user_id = user_service.create_user(user) # User devolverá la id de usuario creado, se puede retornar la id como respuesta al frontend en caso de que sea necesario
+    user_response = user_service.create_user(user) # User devolverá la id de usuario creado, se puede retornar la id como respuesta al frontend en caso de que sea necesario
 
-    return {'code': 201, 'message': 'Usuario creado correctamente', 'data': {'id_user': user}}
-    # Si el user es un diccionario, significa que hubo un error al crear el usuario (probablemente relacionado a la bbdd), se debe retornar un mensaje de error.
-    if(type(user) is dict):
-        return {'code': 400, 'message': 'Error al crear usuario', 'error': user['error']}
+    # Si el user es un diccionario, significa que hubo un error al crear el usuario de parte de la bbdd, se debe retornar un mensaje de error.
+    if(type(user_response) is dict):
+        return user_response
     
-    return {'code': 201, 'message': 'Usuario creado correctamente', 'data': user}
+    return {'code': 201, 'message': 'Usuario creado correctamente', 'data': user_response}
 
 # Como la lógica es crear un usuario, se debe llamar a la función create_user del servicio de usuarios, se debe retornar un mensaje de éxito y el usuario creado,
 '''

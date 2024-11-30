@@ -1,11 +1,7 @@
 from core.database import get_connection, close_connection
 from utils.hash_password import hash_password
-from datetime import datetime
 
 def create_user(user):
-
-    rol_id: int = 1 # 1: Admin
-    estado: int = 1 # 1: Activo, 0: Inactivo #Prueba
 
     # Abrir conexión
     conn = get_connection()
@@ -19,26 +15,31 @@ def create_user(user):
         cursor = conn.cursor()
         password_hash = hash_password(user.contrasena)
         cursor.execute(
-            'INSERT INTO users (nombre, apellido, direccion, username, email, contraseña_hash, rol_id, estado, creado, actualizado) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id', 
-            (user.nombre, user.apellido, user.direccion, user.username, user.email, password_hash, rol_id, estado, datetime.now(), datetime.now()))
+            'INSERT INTO usuario (nombre, apellido, direccion, username, password_hash) VALUES (%s, %s, %s, %s, %s)', 
+            (user.nombre, user.apellido, user.direccion, user.username, password_hash))
+        
+        user_id = cursor.lastrowid
+
+        cursor.execute(
+            'SELECT usuario_id FROM usuario WHERE usuario_id = %s', (user_id,)
+        )
 
         # Obtener id del usuario creado
         id = cursor.fetchone()[0]
 
         # Confirmar cambios y cerrar conexión
         conn.commit()
-        cursor.close()
-
-        close_connection(conn)
 
         return id
     except Exception as e:
         # En caso de error, se debe hacer un rollback y cerrar la conexión
         conn.rollback()
-        cursor.close()
-
-        close_connection(conn)
-        return {'error': str(e)}
+        return {'code': 500, 'message': 'Error al crear usuario', 'error': str(e)}
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            close_connection(conn)
 
 def get_users():
     # Obtener registro de usuarios
