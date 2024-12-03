@@ -173,13 +173,17 @@ def register_user(user: Usuario): # Datos que recibe la API desde frontend
     return {'code': 201, 'message': 'Usuario creado correctamente', 'data': user_response}
 
 # Como la lógica es crear un usuario, se debe llamar a la función create_user del servicio de usuarios, se debe retornar un mensaje de éxito y el usuario creado,
-'''
+
 ## READ USERS
 @router.get('/')
 def get_users():
-    users = get_users()
-    return {'code': 200, 'data': users}
+    users = user_service.get_users()
 
+    if(type(users) is dict):
+        return users
+    
+    return {'code': 200,'message': 'Usuarios obtenidos', 'data': users}
+'''
 ## READ USER BY ID
 @router.get('/{id}')
 def get_user_by_id(id):

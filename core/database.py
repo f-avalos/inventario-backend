@@ -4,35 +4,32 @@ from dotenv import load_dotenv
 import os
 
 # BBDD
-import mysql.connector
-from mysql.connector import pooling
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 
 load_dotenv()
 class Settings(BaseSettings):
-    MYSQL_NAME: str = os.getenv("DATABASE_NAME")
-    MYSQL_USER: str = os.getenv("DATABASE_USER")
-    MYSQL_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
-    MYSQL_HOST: str = os.getenv("DATABASE_HOST")
-    MYSQL_PORT: str = os.getenv("DATABASE_PORT")
+    POSTGRESQL_NAME: str = os.getenv("DATABASE_NAME")
+    POSTGRESQL_USER: str = os.getenv("DATABASE_USER")
+    POSTGRESQL_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
+    POSTGRESQL_HOST: str = os.getenv("DATABASE_HOST")
+    POSTGRESQL_PORT: str = os.getenv("DATABASE_PORT")
 
 def get_connection():
     try:
         settings = Settings()
-        pool = pooling.MySQLConnectionPool(
-                pool_name="pool",
-                pool_size=10,
-                user=settings.MYSQL_USER,
-                password=settings.MYSQL_PASSWORD,
-                host=settings.MYSQL_HOST,
-                database=settings.MYSQL_NAME,
-                port=settings.MYSQL_PORT
-            )
-        conn = pool.get_connection()
+        conn = psycopg2.connect(
+            dbname=settings.POSTGRESQL_NAME,
+            user=settings.POSTGRESQL_USER,
+            password=settings.POSTGRESQL_PASSWORD,
+            host=settings.POSTGRESQL_HOST,
+            port=settings.POSTGRESQL_PORT,
+            cursor_factory=RealDictCursor
+        )
 
         return conn
     except Exception as e:
-
         return {'code': 500, 'message': 'Error al conectar a la base de datos', 'error': str(e)}
 
 def close_connection(conn):
