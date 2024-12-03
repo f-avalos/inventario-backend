@@ -11,26 +11,16 @@ def create_user(user):
         return conn
 
     try:
-        # Cursor: Permite ejecutar comandos SQL en la base de datos a través de la conexión con python.
-        cursor = conn.cursor()
-        password_hash = hash_password(user.contrasena)
-        cursor.execute(
-            'INSERT INTO usuario (nombre, apellido, direccion, username, password_hash) VALUES (%s, %s, %s, %s, %s)', 
+        with conn.cursor() as cursor:
+
+            password_hash = hash_password(user.contrasena)
+
+            cursor.execute(
+            'INSERT INTO usuario (nombre, apellido, direccion, username, password_hash) VALUES (%s, %s, %s, %s, %s) RETURNING usuario_id', 
             (user.nombre, user.apellido, user.direccion, user.username, password_hash))
-        
-        user_id = cursor.lastrowid
-
-        cursor.execute(
-            'SELECT usuario_id FROM usuario WHERE usuario_id = %s', (user_id,)
-        )
-
-        # Obtener id del usuario creado
-        id = cursor.fetchone()[0]
-
-        # Confirmar cambios y cerrar conexión
-        conn.commit()
-
-        return id
+            user_id = cursor.fetchone()[0]
+            conn.commit()
+            return user_id
     except Exception as e:
         # En caso de error, se debe hacer un rollback y cerrar la conexión
         conn.rollback()
@@ -42,8 +32,27 @@ def create_user(user):
             close_connection(conn)
 
 def get_users():
-    # Obtener registro de usuarios
-    return
+    # Abrir conexión
+    conn = get_connection()
+    # Si la conexión es un diccionario significa que retornó un error, manejar error
+    if(type(conn) is dict):
+        return conn
+    cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT * FROM usuario;')
+        users = cursor.fetchall()
+
+        cursor.close()
+        close_connection(conn)
+        return users
+    except Exception as e:
+        return {'code': 500, 'message': 'Error al obtener usuarios', 'error': str(e)}
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            close_connection(conn)
+
 
 def get_user_by_id(id):
     # Obtener usuario por id
